@@ -25,8 +25,9 @@ travis-ci = { repository = "snipsco/rust-threshold-secret-sharing" }
 paramgen = ["primal"]
 
 [dependencies]
-rand = "0.3.*"
-primal = { version = "0.2", optional = true }
+rand = "0.9.*"
+primal = { version = "0.3.3", optional = true }
+num = "0.4"
 
 [dev-dependencies]
 bencher = "0.1"
