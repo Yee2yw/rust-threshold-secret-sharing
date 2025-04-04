@@ -10,7 +10,7 @@
 //! allowing efficient sharing of several secrets together.
 
 use numtheory::{mod_pow, fft2_inverse, fft3};
-use rand;
+//use rand;
 
 /// Parameters for the packed variant of Shamir secret sharing,
 /// specifying number of secrets shared together, total number of shares, and privacy threshold.
@@ -135,15 +135,41 @@ impl PackedSecretSharing {
         shares
     }
 
-    fn sample_polynomial(&self, secrets: &[i64]) -> Vec<i64> {
+    /* fn sample_polynomial(&self, secrets: &[i64]) -> Vec<i64> {
         assert_eq!(secrets.len(), self.secret_count);
         // sample randomness using secure randomness
-        use rand::distributions::Sample;
-        let mut range = rand::distributions::range::Range::new(0, self.prime - 1);
-        let mut rng = rand::OsRng::new().unwrap();
+        //use rand::distributions::uniform::Uniform;
+        use rand::distr::Distribution;
+        use rand::distr::uniform::Uniform; // 显式导入 Uniform
+        use rand::rngs::OsRng;
+        
+        //let range = Uniform::new(0, self.prime - 1);
+        let range = Uniform::new(0, self.prime - 1).expect("Invalid range: low must be < high");
+        let mut rng = OsRng;
         let randomness: Vec<i64> =
             (0..self.threshold).map(|_| range.sample(&mut rng) as i64).collect();
         // recover polynomial
+        let coefficients = self.recover_polynomial(secrets, randomness);
+        assert_eq!(coefficients.len(), self.reconstruct_limit() + 1);
+        coefficients
+    } */
+
+    fn sample_polynomial(&self, secrets: &[i64]) -> Vec<i64> {
+        assert_eq!(secrets.len(), self.secret_count);
+    
+        // 使用 thread_rng 替代 OsRng
+        use rand::distr::{Distribution, Uniform};
+        use rand::rngs::ThreadRng;
+        let mut rng = ThreadRng::default();
+        // let mut rng = rand::thread_rng();
+        let range = Uniform::new(0, self.prime - 1).unwrap();
+    
+        // 生成随机多项式系数
+        let randomness: Vec<i64> = (0..self.threshold)
+            .map(|_| range.sample(&mut rng) as i64)
+            .collect();
+    
+        // 恢复多项式
         let coefficients = self.recover_polynomial(secrets, randomness);
         assert_eq!(coefficients.len(), self.reconstruct_limit() + 1);
         coefficients

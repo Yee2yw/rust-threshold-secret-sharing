@@ -9,7 +9,8 @@
 //! Standard [Shamir secret sharing](https://en.wikipedia.org/wiki/Shamir%27s_Secret_Sharing)
 //! for a single secret.
 
-use rand;
+//use rand;
+
 use numtheory::*;
 
 /// Parameters for the Shamir scheme, specifying privacy threshold and total number of shares.
@@ -85,19 +86,85 @@ impl ShamirSecretSharing {
         lagrange_interpolation_at_zero(&*points, &shares, self.prime)
     }
 
-    fn sample_polynomial(&self, zero_value: i64) -> Vec<i64> {
+    /* fn sample_polynomial(&self, zero_value: i64) -> Vec<i64> {
         // fix the first coefficient (corresponding to the evaluation at zero)
         let mut coefficients = vec![zero_value];
         // sample the remaining coefficients randomly using secure randomness
-        use rand::distributions::Sample;
-        let mut range = rand::distributions::range::Range::new(0, self.prime - 1);
-        let mut rng = rand::OsRng::new().unwrap();
+        use rand::rngs::OsRng;
+        use rand::Rng;
+        use rand::distr::{Distribution, Uniform};
+        
+        let range = Uniform::new(0, self.prime - 1).unwrap();
+        let mut rng = OsRng::default();
         let random_coefficients: Vec<i64> =
             (0..self.threshold).map(|_| range.sample(&mut rng)).collect();
         coefficients.extend(random_coefficients);
         // return
         coefficients
     }
+ */
+
+/* fn sample_polynomial(&self, zero_value: i64) -> Vec<i64> {
+    // 固定第一个系数（对应零点的值）
+    let mut coefficients = vec![zero_value];
+    
+    // 使用安全的随机数生成剩余系数
+    use rand::rngs::OsRng;
+    use rand::Rng;
+    
+    // 初始化 OS 随机数生成器
+    let mut rng = OsRng::default();
+    
+    // 生成 [0, prime) 范围内的随机数（包含 0，不包含 prime）
+    let random_coefficients: Vec<i64> = (0..self.threshold)
+        .map(|_| rng.gen_range(0..self.prime))
+        .collect();
+    
+    coefficients.extend(random_coefficients);
+    coefficients
+} */
+
+/* fn sample_polynomial(&self, zero_value: i64) -> Vec<i64> {
+    // 固定第一个系数（对应零点的值）
+    let mut coefficients = vec![zero_value];
+    
+    // 使用安全的随机数生成剩余系数
+    use rand::Rng;          // 必须导入 Rng trait
+    use rand::rngs::OsRng;  // 导入 OsRng
+    
+    // 正确初始化 OS 随机数生成器
+    let mut rng = OsRng;
+    
+    // 生成 [0, prime) 范围内的随机数
+    let random_coefficients: Vec<i64> = (0..self.threshold)
+        .map(|_| rng.gen_range(0..self.prime))
+        .collect();
+    
+    coefficients.extend(random_coefficients);
+    coefficients
+}
+ */
+
+ fn sample_polynomial(&self, zero_value: i64) -> Vec<i64> {
+    // 固定第一个系数（对应零点的值）
+    let mut coefficients = vec![zero_value];
+    
+    // 使用安全的随机数生成剩余系数
+    use rand::distr::{Distribution, Uniform}; // 使用 Uniform 分布
+    use rand::rngs::OsRng;                            // 使用 OsRng
+    
+    // 初始化 OS 随机数生成器
+    let mut rng = OsRng::default();
+    let range = Uniform::new(0, self.prime).unwrap(); // 定义随机数范围
+    
+    // 生成 [0, prime) 范围内的随机数
+    let random_coefficients: Vec<i64> = (0..self.threshold)
+        .map(|_| range.sample(&mut rng))
+        .collect();
+    
+    coefficients.extend(random_coefficients);
+    coefficients
+}
 
     fn evaluate_polynomial(&self, coefficients: &[i64]) -> Vec<i64> {
         // evaluate at all points
