@@ -1,93 +1,130 @@
-// Copyright (c) 2016 rust-threshold-secret-sharing developers
-//
-// Licensed under the Apache License, Version 2.0
-// <LICENSE-APACHE or http://www.apache.org/licenses/LICENSE-2.0> or the MIT
-// license <LICENSE-MIT or http://opensource.org/licenses/MIT>, at your
-// option. All files in the project carrying such notice may not be copied,
-// modified, or distributed except according to those terms.
-
 #[macro_use]
 extern crate bencher;
-extern crate threshold_secret_sharing as tss;
+extern crate num_bigint;
 
-mod shamir_vs_packed {
+use bencher::Bencher;
+use std::time::Instant;
+use num_bigint::{BigUint, ToBigUint};
 
-    use bencher::Bencher;
-    use tss::shamir::*;
+/// 测试不同有限域的多项式计算性能
+fn bench_polynomial_gf(bench: &mut Bencher, bits: u32) {
+    // 定义有限域 GF(2^n) 的模数
+    let modulus = (BigUint::from(1u32) << bits) - BigUint::from(1u32); // 2^n - 1
 
-    pub fn bench_100_shamir(b: &mut Bencher) {
-        let ref tss = ShamirSecretSharing {
-            threshold: 155 / 3,
-            parts: 728 / 3,
-            prime: 746497,
-        };
+    // 定义多项式系数 a 和 b
+    let a = modulus.clone() - BigUint::from(1u32); // 2^n - 2
+    let b = modulus.clone() - BigUint::from(2u32); // 2^n - 3
 
-        let all_secrets: Vec<i64> = vec![5 ; 100 ];
-        b.iter(|| {
-            let _shares: Vec<Vec<i64>> = all_secrets.iter()
-                .map(|&secret| tss.share(secret))
-                .collect();
-        });
+    // 定义 x 的值
+    let x_values = [5u32.to_biguint().unwrap(), 10u32.to_biguint().unwrap()];
+
+    // 定义计算次数
+    let num_calculations = 10_000_000;
+
+    println!("----------------------------------------");
+    println!("测试有限域 GF(2^{}) 上的多项式计算:", bits);
+    println!("域大小: 2^{} - 1", bits);
+    println!("多项式: y = ax + b，其中 a = 2^{} - 2, b = 2^{} - 3", bits, bits);
+    println!("计算次数: {}", num_calculations);
+
+    // 记录 5 组运行时间
+    let mut times = Vec::new();
+    for i in 1..=5 {
+        let start = Instant::now();
+
+        // 使用一个累加器防止编译器优化
+        let mut dummy = BigUint::from(0u32);
+
+        for _ in 0..num_calculations {
+            for x in &x_values {
+                // 计算 y = (a * x + b) % modulus
+                let ax = &a * x;
+                let y = (ax + &b) % &modulus;
+
+                // 确保结果被保留
+                dummy = (dummy + y) % &modulus;
+                std::hint::black_box(&dummy);
+            }
+        }
+
+        // 防止优化
+        std::hint::black_box(&dummy);
+
+        let duration = start.elapsed();
+        let seconds = duration.as_secs_f64();
+        times.push(seconds);
+
+        println!("运行 {}: {:.6} 秒", i, seconds);
     }
 
-    pub fn bench_100_packed(b: &mut Bencher) {
-        use tss::packed::*;
-        let ref pss = PSS_155_728_100;
-        let all_secrets: Vec<i64> = vec![5 ; 100];
-        b.iter(|| {
-            let _shares = pss.share(&all_secrets);
-        })
-    }
+    // 计算平均运行时间
+    let avg_time = times.iter().sum::<f64>() / times.len() as f64;
+    println!("平均运行时间: {:.9} 秒", avg_time);
+    println!("----------------------------------------");
 
+    // 使用 Bencher 进行基准测试
+    bench.iter(|| {
+        let mut result = BigUint::from(0u32);
+        for _ in 0..num_calculations {
+            for x in &x_values {
+                let y = (&a * x + &b) % &modulus;
+                result = (result + y) % &modulus;
+                std::hint::black_box(&result);
+            }
+        }
+        std::hint::black_box(result);
+    });
 }
 
-benchmark_group!(shamir_vs_packed,
-                 shamir_vs_packed::bench_100_shamir,
-                 shamir_vs_packed::bench_100_packed);
-
-
-mod packed {
-
-    use bencher::Bencher;
-    use tss::packed::*;
-
-    pub fn bench_large_secret_count(b: &mut Bencher) {
-        let ref pss = PSS_155_728_100;
-        let all_secrets = vec![5 ; pss.secret_count * 100];
-        b.iter(|| {
-            let _shares: Vec<Vec<i64>> = all_secrets.chunks(pss.secret_count)
-                .map(|secrets| pss.share(&secrets))
-                .collect();
-        });
-    }
-
-    pub fn bench_large_share_count(b: &mut Bencher) {
-        let ref pss = PSS_155_19682_100;
-        let secrets = vec![5 ; pss.secret_count];
-        b.iter(|| {
-            let _shares = pss.share(&secrets);
-        });
-    }
-
-    pub fn bench_large_reconstruct(b: &mut Bencher) {
-        let ref pss = PSS_155_19682_100;
-        let secrets = vec![5 ; pss.secret_count];
-        let all_shares = pss.share(&secrets);
-
-        // reconstruct using minimum number of shares required
-        let indices: Vec<usize> = (0..pss.reconstruct_limit()).collect();
-        let shares = &all_shares[0..pss.reconstruct_limit()];
-
-        b.iter(|| {
-            let _recovered_secrets = pss.reconstruct(&indices, &shares);
-        });
-    }
-
+// 为所有有限域大小创建基准测试函数
+fn bench_polynomial_gf2_8(bench: &mut Bencher) {
+    bench_polynomial_gf(bench, 8);
 }
 
-benchmark_group!(packed,
-                 packed::bench_large_secret_count,
-                 packed::bench_large_share_count,
-                 packed::bench_large_reconstruct);
+fn bench_polynomial_gf2_16(bench: &mut Bencher) {
+    bench_polynomial_gf(bench, 16);
+}
 
-benchmark_main!(shamir_vs_packed, packed);
+fn bench_polynomial_gf2_32(bench: &mut Bencher) {
+    bench_polynomial_gf(bench, 32);
+}
+
+fn bench_polynomial_gf2_64(bench: &mut Bencher) {
+    bench_polynomial_gf(bench, 64);
+}
+
+fn bench_polynomial_gf2_128(bench: &mut Bencher) {
+    bench_polynomial_gf(bench, 128);
+}
+
+fn bench_polynomial_gf2_256(bench: &mut Bencher) {
+    bench_polynomial_gf(bench, 256);
+}
+
+fn bench_polynomial_gf2_512(bench: &mut Bencher) {
+    bench_polynomial_gf(bench, 512);
+}
+
+fn bench_polynomial_gf2_1024(bench: &mut Bencher) {
+    bench_polynomial_gf(bench, 1024);
+}
+
+fn bench_polynomial_gf2_2048(bench: &mut Bencher) {
+    bench_polynomial_gf(bench, 2048);
+}
+
+// 定义基准测试组
+benchmark_group!(
+    polynomial_gf_benchmarks,
+    bench_polynomial_gf2_8,
+    bench_polynomial_gf2_16,
+    bench_polynomial_gf2_32,
+    bench_polynomial_gf2_64,
+    bench_polynomial_gf2_128,
+    bench_polynomial_gf2_256,
+    bench_polynomial_gf2_512,
+    bench_polynomial_gf2_1024,
+    bench_polynomial_gf2_2048
+);
+
+benchmark_main!(polynomial_gf_benchmarks);

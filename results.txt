@@ -1,0 +1,140 @@
+warning: no edition set: defaulting to the 2015 edition while the latest is 2024
+warning: unnecessary parentheses around method argument
+   --> src/fields/fft.rs:116:36
+    |
+116 |     let big_omega = zp.qpow(omega, (data.len() as u32 / 3));
+    |                                    ^                     ^
+    |
+    = note: `#[warn(unused_parens)]` on by default
+help: remove these parentheses
+    |
+116 -     let big_omega = zp.qpow(omega, (data.len() as u32 / 3));
+116 +     let big_omega = zp.qpow(omega, data.len() as u32 / 3);
+    |
+
+warning: unused macro definition: `all_fields_test`
+  --> src/fields/mod.rs:98:14
+   |
+98 | macro_rules! all_fields_test {
+   |              ^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_macros)]` on by default
+
+warning: unnecessary parentheses around function argument
+  --> src/fields/montgomery.rs:61:15
+   |
+61 |         Value((if t >= (self.n) { t - (self.n) } else { t }))
+   |               ^                                            ^
+   |
+help: remove these parentheses
+   |
+61 -         Value((if t >= (self.n) { t - (self.n) } else { t }))
+61 +         Value(if t >= (self.n) { t - (self.n) } else { t })
+   |
+
+warning: variable does not need to be mutable
+  --> src/fields/fft.rs:39:9
+   |
+39 |     for mut x in data {
+   |         ----^
+   |         |
+   |         help: remove this `mut`
+   |
+   = note: `#[warn(unused_mut)]` on by default
+
+warning: variable does not need to be mutable
+   --> src/fields/fft.rs:169:9
+    |
+169 |     for mut x in data {
+    |         ----^
+    |         |
+    |         help: remove this `mut`
+
+warning: associated items `new` and `zero` are never used
+  --> src/fields/mod.rs:25:8
+   |
+18 | pub trait Field {
+   |           ----- associated items in this trait
+...
+25 |     fn new(prime: u64) -> Self;
+   |        ^^^
+...
+57 |     fn zero(&self) -> Self::U {
+   |        ^^^^
+   |
+   = note: `#[warn(dead_code)]` on by default
+
+warning: method `zero` is never used
+  --> src/fields/mod.rs:57:8
+   |
+18 | pub trait Field {
+   |           ----- method in this trait
+...
+57 |     fn zero(&self) -> Self::U {
+   |        ^^^^
+   |
+   = note: `#[warn(dead_code)]` on by default
+
+warning: `threshold-secret-sharing` (lib) generated 6 warnings (run `cargo fix --lib -p threshold-secret-sharing` to apply 4 suggestions)
+warning: `threshold-secret-sharing` (lib test) generated 5 warnings (4 duplicates)
+    Finished `bench` profile [optimized] target(s) in 0.04s
+     Running unittests src/lib.rs (target/release/deps/threshold_secret_sharing-ee998fd2adb0f5bc)
+
+running 42 tests
+test fields::montgomery::test_add ... ignored
+test fields::montgomery::test_convert ... ignored
+test fields::montgomery::test_fft2 ... ignored
+test fields::montgomery::test_fft2_big ... ignored
+test fields::montgomery::test_fft2_inverse ... ignored
+test fields::montgomery::test_fft3 ... ignored
+test fields::montgomery::test_fft3_big ... ignored
+test fields::montgomery::test_fft3_inverse ... ignored
+test fields::montgomery::test_mul ... ignored
+test fields::montgomery::test_qpow ... ignored
+test fields::montgomery::test_sub ... ignored
+test fields::native::test_add ... ignored
+test fields::native::test_convert ... ignored
+test fields::native::test_fft2 ... ignored
+test fields::native::test_fft2_big ... ignored
+test fields::native::test_fft2_inverse ... ignored
+test fields::native::test_fft3 ... ignored
+test fields::native::test_fft3_big ... ignored
+test fields::native::test_fft3_inverse ... ignored
+test fields::native::test_mul ... ignored
+test fields::native::test_qpow ... ignored
+test fields::native::test_sub ... ignored
+test numtheory::test_compute_newton_coefficients ... ignored
+test numtheory::test_fft2 ... ignored
+test numtheory::test_fft2_inverse ... ignored
+test numtheory::test_fft3 ... ignored
+test numtheory::test_fft3_inverse ... ignored
+test numtheory::test_gcd ... ignored
+test numtheory::test_mod_evaluate_polynomial ... ignored
+test numtheory::test_mod_inverse ... ignored
+test numtheory::test_mod_pow ... ignored
+test numtheory::test_newton_interpolation_general ... ignored
+test packed::tests::test_evaluate_polynomial ... ignored
+test packed::tests::test_large_share ... ignored
+test packed::tests::test_recover_polynomial ... ignored
+test packed::tests::test_share ... ignored
+test packed::tests::test_share_additive_homomorphism ... ignored
+test packed::tests::test_share_multiplicative_homomorphism ... ignored
+test packed::tests::test_share_reconstruct ... ignored
+test shamir::test_evaluate_polynomial ... ignored
+test shamir::test_shamir ... ignored
+test shamir::wikipedia_example ... ignored
+
+test result: ok. 0 passed; 0 failed; 42 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running benches/packed.rs (target/release/deps/packed-1de003fcef2b15fa)
+
+running 9 tests
+test bench_polynomial_gf2_1024 ... ----------------------------------------
+测试有限域 GF(2^1024) 上的多项式计算:
+域大小: 2^1024 - 1
+多项式: y = ax + b，其中 a = 2^1024 - 2, b = 2^1024 - 3
+计算次数: 10000000
+运行 1: 11.700422 秒
+运行 2: 11.795143 秒
+运行 3: 11.553438 秒
+运行 4: 11.816273 秒
